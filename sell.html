@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sell a Coupon - CouKart</title>
+    <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Sell a Coupon</h1>
+        <nav>
+            <a href="/index.html">Home</a> |
+            <a href="/browse.html">Browse Coupons</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <div class="form-container">
+            <h2>List Your Coupon</h2>
+            <form id="sell-form">
+                <div class="form-group">
+                    <label for="title">Coupon Title</label>
+                    <input type="text" id="title" placeholder="e.g., 20% off at Amazon" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="code">Discount Code</label>
+                    <input type="text" id="code" placeholder="e.g., SAVE20" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="price">Price ($)</label>
+                    <input type="number" id="price" placeholder="e.g., 5.99" step="0.01" min="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="category">Category</label>
+                    <select id="category" required>
+                        <option value="" disabled selected>Select Category</option>
+                        <option value="Food">Food</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="expiryDate">Expiry Date (Optional)</label>
+                    <input type="date" id="expiryDate">
+                </div>
+                
+                <div class="form-group">
+                    <button type="submit" class="btn-primary">List Coupon</button>
+                </div>
+            </form>
+        </div>
+        
+        <div class="selling-tips">
+            <h3>Tips for Selling</h3>
+            <ul>
+                <li>Set a competitive price to sell your coupon faster</li>
+                <li>Include all important details in the title</li>
+                <li>Double-check the expiry date if applicable</li>
+                <li>Make sure the coupon code is correct</li>
+            </ul>
+        </div>
+    </div>
+    
+    <footer>
+        <p>&copy; 2025 CouKart - All rights reserved</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set minimum date to today
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('expiryDate').min = `${yyyy}-${mm}-${dd}`;
+            
+            // Handle form submission
+            document.getElementById('sell-form').addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Validate price
+                const price = parseFloat(document.getElementById('price').value);
+                if (isNaN(price) || price <= 0) {
+                    alert('Please enter a valid price greater than 0');
+                    return;
+                }
+                
+                // Create coupon object
+                let coupon = {
+                    title: document.getElementById('title').value.trim(),
+                    code: document.getElementById('code').value.trim(),
+                    price: price,
+                    category: document.getElementById('category').value
+                };
+                
+                // Add expiry date if provided
+                const expiryDate = document.getElementById('expiryDate').value;
+                if (expiryDate) {
+                    coupon.expiryDate = expiryDate;
+                }
+                
+                // Disable submit button and show loading state
+                const submitButton = this.querySelector('button[type="submit"]');
+                const originalText = submitButton.textContent;
+                submitButton.disabled = true;
+                submitButton.textContent = 'Listing...';
+                
+                // Send to server
+                fetch('/api/coupons/sell', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(coupon)
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(data => {
+                            throw new Error(data.error || 'Error listing coupon');
+                        });
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    // Show success message
+                    alert("Coupon Listed Successfully!");
+                    
+                    // Reset form
+                    document.getElementById('sell-form').reset();
+                    
+                    // Redirect to browse page after short delay
+                    setTimeout(() => {
+                        window.location.href = '/browse.html';
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert(error.message);
+                })
+                .finally(() => {
+                    // Reset button state
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                });
+            });
+        });
+    </script>
+</body>
+</html>
